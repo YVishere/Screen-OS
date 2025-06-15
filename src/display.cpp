@@ -15,7 +15,7 @@ void initDisplay(){
 
     tft.fillScreen(TFT_CYAN);
 
-    if (!SD.begin(5, tft.getSPIinstance(), 1000000)){
+    if (!SD.begin(5, tft.getSPIinstance())){
         Serial.printf("SD card failed");
         return;
     }
