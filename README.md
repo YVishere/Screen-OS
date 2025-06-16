@@ -14,6 +14,11 @@ This project is a prototype for building an operating system-like interface on a
 - **SD Card Compatibility**  
   - SD cards of **32GB or more** often **fail to work** reliably with the `SD.h` library.
   - ✅ **Recommended**: `SanDisk Ultra 16GB SDHC Memory Card, 80MB/s` — tested and working.
+ 
+- **Playing different WAV files**
+  - I can only play wav files up to 10 MB reliably.
+  - Need to design a protocol to group similar audio files.
+  - **FFMPEG command**:  ffmpeg -y -i 505aud.mp3 -ar 22050 -ac 1 -sample_fmt s16 -t 200 5052.wav to bring down the `505` wav file to 10MB.
 
 ---
 
