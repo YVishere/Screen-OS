@@ -119,11 +119,52 @@ WAVFileReader::WAVFileReader(const char *file_name)
     Serial.printf("wav_header size %d\n", sizeof(wav_header_t));
     m_file.read((byte *)&wav_header, sizeof(wav_header_t));
 
+    // Check RIFF, WAVE, and fmt headers as before
+    if (memcmp(wav_header.riff_header, "RIFF", 4) != 0 ||
+        memcmp(wav_header.wave_header, "WAVE", 4) != 0 ||
+        memcmp(wav_header.fmt_header, "fmt", 3) != 0) {
+        Serial.println("Invalid .wav file: missing RIFF/WAVE/fmt");
+        return;
+    }
+
+    // Skip extra chunks until we find the 'data' chunk
+    while (memcmp(wav_header.data_header, "data", 4) != 0) {
+        // If not 'data', skip this chunk
+        uint32_t skip_bytes = wav_header.data_bytes;
+        Serial.print("Skipping chunk: ");
+        PrintData(wav_header.data_header, 4);
+        Serial.print(", size: ");
+        Serial.println(skip_bytes);
+        m_file.seek(m_file.position() + skip_bytes);
+        // Read next chunk head`er
+        if (m_file.read((byte *)wav_header.data_header, 4) != 4) {
+            Serial.println("Failed to find data chunk");
+            return;
+        }
+        if (m_file.read((byte *)&wav_header.data_bytes, 4) != 4) {
+            Serial.println("Failed to read data chunk size");
+            return;
+        }
+    }
+
     DumpWAVHeader(&wav_header);
 
-    // sanity check the bit depth
-    if (!ValidWavData(&wav_header)){
-        Serial.println("Invalid .wav file");
+    // Only basic checks now, since we already validated RIFF/WAVE/fmt
+    if (wav_header.audio_format != 1) {
+        Serial.println("Invalid .wav file: format Id must be 1 (PCM)");
+        return;
+    }
+    if ((wav_header.num_channels != 1) && (wav_header.num_channels != 2)) {
+        Serial.println("Invalid .wav file: only mono or stereo permitted.");
+        return;
+    }
+    if (wav_header.sample_rate > 48000) {
+        Serial.println("Invalid .wav file: Sample rate cannot be greater than 48000");
+        return;
+    }
+    if ((wav_header.bit_depth != 8) && (wav_header.bit_depth != 16)) {
+        Serial.println("Invalid .wav file: Only 8 or 16 bits per sample permitted.");
+        return;
     }
 
     m_num_channels = wav_header.num_channels;

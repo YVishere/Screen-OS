@@ -19,7 +19,7 @@ void setup() {
 
   initDisplay();
 
-  sampleSource = new WAVFileReader("/samp.wav");
+  sampleSource = new WAVFileReader("/5052.wav");
 
   Serial.println("Starting I2S Output");
   output = new I2SOutput();

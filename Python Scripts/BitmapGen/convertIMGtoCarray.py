@@ -8,6 +8,7 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import sys
+import cv2
 
 
 ## Convert video to RGB332 format with all frames stacked vertically
@@ -320,6 +321,198 @@ def convert_bmp_to_rgb332(image_path, image_name, rotate_k):
     
     return flat_rgb332, (width, height)
 
+def resize_frame_to_display(image_path, display_width, display_height):
+    """
+    Resize an image to fit within the display dimensions while maintaining aspect ratio.
+    
+    Args:
+        image_path: Path to the source image
+        display_width: Width of the target display
+        display_height: Height of the target display
+        
+    Returns:
+        Resized PIL Image object
+    """
+    # Open the original image
+    img = Image.open(image_path)
+    
+    # Get original dimensions
+    orig_width, orig_height = img.size
+    
+    # Calculate aspect ratios
+    img_ratio = orig_width / orig_height
+    display_ratio = display_width / display_height
+    
+    # Determine new dimensions based on aspect ratio
+    if img_ratio > display_ratio:
+        # Image is wider than display (relative to height)
+        new_width = display_width
+        new_height = int(display_width / img_ratio)
+    else:
+        # Image is taller than display (relative to width)
+        new_height = display_height
+        new_width = int(display_height * img_ratio)
+    
+    # Resize the image
+    resized_img = img.resize((new_width, new_height), Image.LANCZOS)
+    
+    # Create a new image with display dimensions (black background)
+    final_img = Image.new('RGB', (display_width, display_height), (0, 0, 0))
+    
+    # Calculate position to center the image
+    paste_x = (display_width - new_width) // 2
+    paste_y = (display_height - new_height) // 2
+    
+    # Paste the resized image onto the background
+    final_img.paste(resized_img, (paste_x, paste_y))
+    
+    return final_img
+
+def convert_to_bitmap(image, format='1'):
+    """
+    Convert an image to bitmap format.
+    
+    Args:
+        image: PIL Image object
+        format: '1' for 1-bit bitmap, 'L' for 8-bit grayscale
+        
+    Returns:
+        Image converted to bitmap format
+    """
+    return image.convert(format)
+
+def resize_video_frame(frame, display_width, display_height):
+    """
+    Resize a video frame to fit display while maintaining aspect ratio.
+    
+    Args:
+        frame: OpenCV video frame (numpy array)
+        display_width: Width of the target display
+        display_height: Height of the target display
+        
+    Returns:
+        Resized frame as numpy array with display dimensions
+    """
+    # Get original dimensions
+    orig_height, orig_width = frame.shape[:2]
+    
+    # Calculate aspect ratios
+    img_ratio = orig_width / orig_height
+    display_ratio = display_width / display_height
+    
+    # Determine new dimensions based on aspect ratio
+    if img_ratio > display_ratio:
+        # Image is wider than display (relative to height)
+        new_width = display_width
+        new_height = int(display_width / img_ratio)
+    else:
+        # Image is taller than display (relative to width)
+        new_height = display_height
+        new_width = int(display_height * img_ratio)
+    
+    # Resize the frame
+    resized_frame = cv2.resize(frame, (new_width, new_height), interpolation=cv2.INTER_LANCZOS4)
+    
+    # Create a black canvas of display dimensions
+    final_frame = np.zeros((display_height, display_width, 3), dtype=np.uint8)
+    
+    # Calculate position to center the image
+    paste_y = (display_height - new_height) // 2
+    paste_x = (display_width - new_width) // 2
+    
+    # Paste the resized frame onto the black canvas
+    final_frame[paste_y:paste_y+new_height, paste_x:paste_x+new_width] = resized_frame
+    
+    return final_frame
+
+def convert_frame_to_bitmap(frame, format='1bit'):
+    """
+    Convert a video frame to bitmap format.
+    
+    Args:
+        frame: OpenCV video frame (numpy array)
+        format: '1bit' for 1-bit bitmap, '8bit' for grayscale
+        
+    Returns:
+        Frame converted to bitmap format
+    """
+    # Convert BGR to RGB (OpenCV uses BGR, PIL uses RGB)
+    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    
+    # Convert to PIL Image for easier bitmap conversion
+    pil_image = Image.fromarray(rgb_frame)
+    
+    if format == '1bit':
+        # Convert to 1-bit bitmap
+        bitmap_image = pil_image.convert('1')
+    elif format == '8bit':
+        # Convert to 8-bit grayscale
+        bitmap_image = pil_image.convert('L')
+    else:
+        raise ValueError("Format must be '1bit' or '8bit'")
+    
+    # Convert back to numpy array for OpenCV processing
+    bitmap_array = np.array(bitmap_image)
+    
+    return bitmap_array
+
+def process_video(video_path, display_width, display_height, output_path=None):
+    """
+    Process video file, resizing frames and converting to bitmap.
+    
+    Args:
+        video_path: Path to input video
+        display_width: Width of target display
+        display_height: Height of target display
+        output_path: Path to save output video (optional)
+    """
+    # Open video file
+    cap = cv2.VideoCapture(video_path)
+    
+    # Check if video opened successfully
+    if not cap.isOpened():
+        print("Error opening video file")
+        return
+    
+    # Get video properties
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    
+    # Setup video writer if output path is provided
+    if output_path:
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        out = cv2.VideoWriter(output_path, fourcc, fps, (display_width, display_height), False)
+    
+    frame_number = 0
+    
+    # Process each frame
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+            
+        # Resize frame to fit display
+        resized_frame = resize_video_frame(frame, display_width, display_height)
+        
+        # Convert to bitmap
+        bitmap_frame = convert_frame_to_bitmap(resized_frame, format='8bit')
+        
+        # Write to output video
+        if output_path:
+            out.write(bitmap_frame)
+        
+        # Display progress
+        frame_number += 1
+        if frame_number % 30 == 0:
+            print(f"Processing frame {frame_number}/{frame_count}")
+    
+    # Release resources
+    cap.release()
+    if output_path:
+        out.release()
+    
+    print("Video processing complete")
+
 if __name__ == "__main__":
     # Get image path from command line or use default
     # rotate = 3              #Rotate image by k * 90 degrees
@@ -329,4 +522,20 @@ if __name__ == "__main__":
     # convert_bmp_to_rgb332(image_path, image_name, rotate)
 
     convert_video_to_rgb332_bin_frames("disint.gif", "output_frames", max_frames=10, rotate_k=1)
+
+    # Display dimensions (these would be your variables)
+    DISPLAY_WIDTH = 320
+    DISPLAY_HEIGHT = 240
+
+    # Process video
+    process_video("amog.gif", DISPLAY_WIDTH, DISPLAY_HEIGHT, "output_frames.bin")
+    
+    # For individual frame processing from video
+    # cap = cv2.VideoCapture("example.mp4")
+    # ret, frame = cap.read()
+    # if ret:
+    #     resized_frame = resize_video_frame(frame, DISPLAY_WIDTH, DISPLAY_HEIGHT)
+    #     bitmap_frame = convert_frame_to_bitmap(resized_frame)
+    #     cv2.imwrite("frame_bitmap.bmp", bitmap_frame)
+    # cap.release()
 
