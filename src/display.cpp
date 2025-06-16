@@ -4,6 +4,19 @@ void sanity_check();
 
 TFT_eSPI tft = TFT_eSPI();
 
+uint16_t colors[] = {
+    TFT_BLACK, TFT_NAVY, TFT_DARKGREEN, TFT_DARKCYAN, 
+    TFT_MAROON, TFT_PURPLE, TFT_OLIVE, TFT_LIGHTGREY,
+    TFT_DARKGREY, TFT_BLUE, TFT_GREEN, TFT_CYAN,
+    TFT_RED, TFT_MAGENTA, TFT_YELLOW, TFT_WHITE
+};
+
+void rotateColors(){
+  static int colorIndex = 0;
+  tft.fillScreen(colors[colorIndex]);
+  colorIndex++;
+}
+
 void initDisplay(){
     pinMode(5, OUTPUT);
     pinMode(15, OUTPUT);

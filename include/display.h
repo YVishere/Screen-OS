@@ -10,5 +10,6 @@
 
 void initDisplay();
 void printDirectory(File dir, int numTabs);
+void rotateColors();
 
 #endif
