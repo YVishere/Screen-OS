@@ -524,8 +524,8 @@ if __name__ == "__main__":
     convert_video_to_rgb332_bin_frames("disint.gif", "output_frames", max_frames=10, rotate_k=1)
 
     # Display dimensions (these would be your variables)
-    DISPLAY_WIDTH = 320
-    DISPLAY_HEIGHT = 240
+    DISPLAY_WIDTH = 128
+    DISPLAY_HEIGHT = 160
 
     # Process video
     process_video("amog.gif", DISPLAY_WIDTH, DISPLAY_HEIGHT, "output_frames.bin")
