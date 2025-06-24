@@ -228,5 +228,5 @@ void startSDVideo(const char *file_name, int x, int y, int width, int height){
 
     xTaskNotifyGive(loadBuffer1TaskHandle);
     xTaskNotifyGive(loadBuffer2TaskHandle);
-    xSemaphoreGive(spiMutexBuffer);
+    // xSemaphoreGive(spiMutexBuffer);
 }

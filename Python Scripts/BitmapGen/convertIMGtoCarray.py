@@ -456,62 +456,65 @@ def convert_frame_to_bitmap(frame, format='1bit'):
     
     return bitmap_array
 
-def process_video(video_path, display_width, display_height, output_path=None):
+def process_video(video_path, display_width, display_height, output_folder=None, max_frames=None, rotate_k=0):
     """
-    Process video file, resizing frames and converting to bitmap.
-    
+    Process video file, resizing frames and converting to RGB332, saving each as a .bin file.
     Args:
         video_path: Path to input video
         display_width: Width of target display
         display_height: Height of target display
-        output_path: Path to save output video (optional)
+        output_folder: Folder to save .bin frames (default: 'output_frames')
+        max_frames: Maximum number of frames to process
+        rotate_k: Number of 90-degree rotations to apply
     """
-    # Open video file
+    import os
+    import shutil
+    if output_folder is None:
+        output_folder = "output_frames"
+    # Prepare output directory
+    if os.path.exists(output_folder):
+        shutil.rmtree(output_folder)
+    os.makedirs(output_folder)
+
     cap = cv2.VideoCapture(video_path)
-    
-    # Check if video opened successfully
     if not cap.isOpened():
         print("Error opening video file")
         return
-    
-    # Get video properties
-    fps = cap.get(cv2.CAP_PROP_FPS)
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    
-    # Setup video writer if output path is provided
-    if output_path:
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        out = cv2.VideoWriter(output_path, fourcc, fps, (display_width, display_height), False)
-    
+    num_frames = frame_count if max_frames is None else min(frame_count, max_frames)
+    print(f"Processing video with {num_frames} frames, dimensions: {display_width}x{display_height}")
     frame_number = 0
-    
-    # Process each frame
     while cap.isOpened():
         ret, frame = cap.read()
-        if not ret:
+        if not ret or (max_frames is not None and frame_number >= max_frames):
             break
-            
-        # Resize frame to fit display
+        # Resize and center frame
         resized_frame = resize_video_frame(frame, display_width, display_height)
-        
-        # Convert to bitmap
-        bitmap_frame = convert_frame_to_bitmap(resized_frame, format='8bit')
-        
-        # Write to output video
-        if output_path:
-            out.write(bitmap_frame)
-        
-        # Display progress
+        # Optionally rotate
+        if rotate_k:
+            resized_frame = np.rot90(resized_frame, k=rotate_k)
+        # Convert to RGB332
+        r = (resized_frame[:,:,0] >> 5) & 0x07
+        g = (resized_frame[:,:,1] >> 5) & 0x07
+        b = (resized_frame[:,:,2] >> 6) & 0x03
+        rgb332 = (r << 5) | (g << 2) | b
+        # Save to .bin file
+        bin_filename = os.path.join(output_folder, f"frame{frame_number+1}.bin")
+        rgb332.astype(np.uint8).tofile(bin_filename)
         frame_number += 1
         if frame_number % 30 == 0:
-            print(f"Processing frame {frame_number}/{frame_count}")
-    
-    # Release resources
+            print(f"Processing frame {frame_number}/{num_frames}")
     cap.release()
-    if output_path:
-        out.release()
-    
-    print("Video processing complete")
+    # Write info.txt
+    info_filename = os.path.join(output_folder, "info.txt")
+    with open(info_filename, "w") as info_file:
+        info_file.write(f"Video: {os.path.basename(video_path)}\n")
+        info_file.write(f"Frames: {frame_number}\n")
+        info_file.write(f"Width: {display_width}\n")
+        info_file.write(f"Height: {display_height}\n")
+        info_file.write("Format: RGB332 (RRRGGGBB)\n")
+    print(f"Successfully exported {frame_number} frames to {output_folder}")
+    print(f"Frame size: {display_width*display_height} bytes")
 
 if __name__ == "__main__":
     # Get image path from command line or use default
@@ -521,14 +524,19 @@ if __name__ == "__main__":
     # image_path = f"{image_name}{extension}" 
     # convert_bmp_to_rgb332(image_path, image_name, rotate)
 
-    convert_video_to_rgb332_bin_frames("disint.gif", "output_frames", max_frames=10, rotate_k=1)
+    # convert_video_to_rgb332_bin_frames("disint.gif", "output_frames", max_frames=10, rotate_k=1)
 
     # Display dimensions (these would be your variables)
     DISPLAY_WIDTH = 128
     DISPLAY_HEIGHT = 160
+    import os
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    video_path = os.path.join(script_dir, "videos", "amog.mp4")
 
-    # Process video
-    process_video("amog.gif", DISPLAY_WIDTH, DISPLAY_HEIGHT, "output_frames.bin")
+    # Build video path relative to script location
+    process_video(video_path, DISPLAY_WIDTH, DISPLAY_HEIGHT, "output_frame", rotate_k=1)
+
+    # convert_video_to_rgb332_bin_frames(video_path, "output_frames", max_frames=10, rotate_k=1)
     
     # For individual frame processing from video
     # cap = cv2.VideoCapture("example.mp4")

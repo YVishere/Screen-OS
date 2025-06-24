@@ -2,6 +2,8 @@
 
 void sanity_check();
 
+SPIClass hspi(HSPI);
+
 TFT_eSPI tft = TFT_eSPI();
 
 uint16_t colors[] = {
@@ -28,7 +30,9 @@ void initDisplay(){
 
     tft.fillScreen(TFT_CYAN);
 
-    if (!SD.begin(5, tft.getSPIinstance())){
+    hspi.begin(14, 12, 13, 5); // SCK, MISO, MOSI, CS
+
+    if (!SD.begin(5, hspi)){
         Serial.printf("SD card failed");
         return;
     }

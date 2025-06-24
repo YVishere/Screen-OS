@@ -6,7 +6,7 @@
 
 i2s_pin_config_t i2sPins = {
     .bck_io_num = GPIO_NUM_27,
-    .ws_io_num = GPIO_NUM_14,
+    .ws_io_num = GPIO_NUM_25,
     .data_out_num = GPIO_NUM_26,
     .data_in_num = -1};
 

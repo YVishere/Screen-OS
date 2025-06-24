@@ -1,0 +1,5 @@
+Video: amog.mp4
+Frames: 415
+Width: 128
+Height: 160
+Format: RGB332 (RRRGGGBB)
