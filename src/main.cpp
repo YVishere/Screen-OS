@@ -3,6 +3,7 @@
 #include "WAVFileReader.h"
 #include "I2SOutput.h"
 #include "display.h"
+#include "SD_video.h"
 
 i2s_pin_config_t i2sPins = {
     .bck_io_num = GPIO_NUM_27,
@@ -13,17 +14,23 @@ i2s_pin_config_t i2sPins = {
 I2SOutput *output;
 SampleSource *sampleSource;
 
+const char *FRAME_FILE_PATTERN = "output_frame/frame%04d.bin";
+
 void setup() {
   Serial.begin(115200);
   delay(1000); 
 
   initDisplay();
 
-  sampleSource = new WAVFileReader("/5052.wav");
+  Serial.println("Starting VID");
 
-  Serial.println("Starting I2S Output");
-  output = new I2SOutput();
-  output->start(I2S_NUM_1, i2sPins, sampleSource);
+  startSDVideo(FRAME_FILE_PATTERN, 0, 0, 128, 160);
+
+  // sampleSource = new WAVFileReader("/5052.wav");
+
+  // Serial.println("Starting I2S Output");
+  // output = new I2SOutput();
+  // output->start(I2S_NUM_1, i2sPins, sampleSource);
 }
 
 void loop() {
