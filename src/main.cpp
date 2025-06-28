@@ -14,7 +14,7 @@ i2s_pin_config_t i2sPins = {
 I2SOutput *output;
 SampleSource *sampleSource;
 
-const char *FRAME_FILE_PATTERN = "output_frame/frame%04d.bin";
+const char *FRAME_FILE_PATTERN = "/output_frame/frame%d.bin";
 
 void setup() {
   Serial.begin(115200);
@@ -24,7 +24,7 @@ void setup() {
 
   Serial.println("Starting VID");
 
-  startSDVideo(FRAME_FILE_PATTERN, 0, 0, 128, 160);
+  startSDVideo(FRAME_FILE_PATTERN, 0, 0, 160, 128);
 
   // sampleSource = new WAVFileReader("/5052.wav");
 

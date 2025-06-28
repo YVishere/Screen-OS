@@ -36,7 +36,7 @@ void countAvailableFrames(const char *FRAME_FILE_PATTERN) {
 
 void loadBuffer1(void *pvParameters) {
     // Load the first buffer with video data
-    int frameIndex = 0;
+    int frameIndex = 1;
     bool active = false;
 
     const char *FRAME_FILE_PATTERN = (const char *)pvParameters;
@@ -72,6 +72,7 @@ void loadBuffer1(void *pvParameters) {
             active = true;
             Serial.println("Buffer 1 loading started");
         }
+        vTaskDelay(10); // Feed the watchdog
     }
 
     vTaskDelete(NULL);
@@ -80,7 +81,7 @@ void loadBuffer1(void *pvParameters) {
 void loadBuffer2(void *pvParameters) {
     // Load the second buffer with video data
     // Load the first buffer with video data
-    int frameIndex = 1;
+    int frameIndex = 2;
     bool active = false;
 
     const char *FRAME_FILE_PATTERN = (const char *)pvParameters;
@@ -116,6 +117,7 @@ void loadBuffer2(void *pvParameters) {
             active = true;
             Serial.println("Buffer 2 loading started");
         }
+        vTaskDelay(10); // Feed the watchdog
     }
 
     vTaskDelete(NULL);
@@ -139,6 +141,7 @@ void drawBuffer1(void *pvParameters) {
             active = true;
             Serial.println("Buffer 1 drawing started");
         }
+        vTaskDelay(10); // Feed the watchdog
     }
     vTaskDelete(NULL);
 }
@@ -160,6 +163,7 @@ void drawBuffer2(void *pvParameters) {
             active = true;
             Serial.println("Buffer 2 drawing started");
         }
+        vTaskDelay(10); // Feed the watchdog
     }
     vTaskDelete(NULL);
 }

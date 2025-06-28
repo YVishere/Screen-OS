@@ -30,7 +30,7 @@ void initDisplay(){
 
     tft.fillScreen(TFT_CYAN);
 
-    hspi.begin(14, 12, 13, 5); // SCK, MISO, MOSI, CS
+    hspi.begin(14, 12, 4, 5); // SCK, MISO, MOSI, CS
 
     if (!SD.begin(5, hspi)){
         Serial.printf("SD card failed");
@@ -127,6 +127,11 @@ void printDirectory(File dir, int numTabs) {
     File entry = dir.openNextFile();
     if (!entry) {
       break; // No more files in this directory
+    }
+    // Skip the output_frames directory
+    if (entry.isDirectory() && String(entry.name()) == "output_frame") {
+      entry.close();
+      continue;
     }
     for (uint8_t i = 0; i < numTabs; i++) {
       if (i == 0) {
