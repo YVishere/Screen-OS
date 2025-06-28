@@ -8,7 +8,7 @@ This project is a prototype for building an operating system-like interface on a
 ## ⚠️ Notes
 
 - **Power Management**  
- ~~ To avoid flickering of the TFT display when audio is active:~~  
+ ~~To avoid flickering of the TFT display when audio is active:~~  
   ~~- Use **separate VINs** for the TFT Display and MAX98357A.~~  
   The flickering in tft display during audio output was due to me powering the board with through a type-C connection. Using a normal USB port is fine.
   
