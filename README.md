@@ -21,7 +21,7 @@ This project is a prototype for building an operating system-like interface on a
   - **FFMPEG command**:  ffmpeg -y -i 505aud.mp3 -ar 22050 -ac 1 -sample_fmt s16 -t 200 5052.wav to bring down the `505` wav file to 10MB.
 
 - **Uploading to flash issue**
-  - Disconnect the SD card MISO line if you are not able to upload code to flash
+  - Cut power to peripherals because the pins being used by the hspi line for SD card are needed to flash the chip. "SPI flash".
 
 ---
 
