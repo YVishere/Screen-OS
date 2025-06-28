@@ -32,8 +32,28 @@ void initDisplay(){
 
     hspi.begin(14, 12, 4, 5); // SCK, MISO, MOSI, CS
 
-    if (!SD.begin(5, hspi)){
-        Serial.printf("SD card failed");
+    // Try SD card initialization with retries
+    int sdRetries = 5;
+    bool sdInitialized = false;
+    
+    while (sdRetries > 0 && !sdInitialized) {
+        Serial.printf("Attempting SD card initialization... (attempt %d)\n", 6 - sdRetries);
+        
+        // Add delay to allow SD card to stabilize
+        delay(100);
+        
+        if (SD.begin(5, hspi)) {
+            sdInitialized = true;
+            Serial.println("SD card initialized successfully");
+        } else {
+            Serial.printf("SD card initialization failed, retries left: %d\n", sdRetries - 1);
+            sdRetries--;
+            delay(500); // Wait before retry
+        }
+    }
+    
+    if (!sdInitialized) {
+        Serial.println("SD card failed after all retries");
         return;
     }
 
@@ -61,10 +81,13 @@ void initDisplay(){
     Serial.println("Initialization done.");
 
     File root = SD.open("/");
-    Serial.printf("Printing SD file system\n");
-    Serial.printf("###############################################\n");
-    printDirectory(root, 0);
-    Serial.printf("###############################################\n");
+    if (root) {
+        Serial.printf("Printing SD file system\n");
+        Serial.printf("###############################################\n");
+        printDirectory(root, 0);
+        Serial.printf("###############################################\n");
+        root.close();
+    }
 
     Serial.println("Sanity check:");
     sanity_check();

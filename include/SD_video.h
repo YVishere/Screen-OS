@@ -6,6 +6,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_task_wdt.h"
 
 #include <SPI.h>
 #include <SD.h>
@@ -14,6 +15,12 @@
 extern TFT_eSPI tft;
 
 void startSDVideo(const char *file_name, int x, int y, int width, int height);
+void countAvailableFrames(const char *FRAME_FILE_PATTERN);
+
+void initializeWatchdog();
+void addTaskToWatchdog(TaskHandle_t taskHandle, const char* taskName);
+void feedWatchdog();
+int getNextFrameIndex();
 
 void loadBuffer1(void *pvParameters);
 void loadBuffer2(void *pvParameters);

@@ -20,11 +20,20 @@ void setup() {
   Serial.begin(115200);
   delay(1000); 
 
+  Serial.println("=== ESP32 Video Player Starting ===");
+  Serial.printf("Free heap: %d bytes\n", ESP.getFreeHeap());
+  Serial.printf("PSRAM available: %s\n", psramFound() ? "Yes" : "No");
+
+  Serial.println("Initializing display and SD card...");
   initDisplay();
 
-  Serial.println("Starting VID");
+  // Add delay to ensure SD card is fully initialized
+  delay(500);
 
+  Serial.println("Starting VID");
   startSDVideo(FRAME_FILE_PATTERN, 0, 0, 160, 128);
+
+  Serial.printf("Setup complete. Free heap: %d bytes\n", ESP.getFreeHeap());
 
   // sampleSource = new WAVFileReader("/5052.wav");
 
@@ -34,5 +43,11 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  // Add watchdog feeding in main loop and memory monitoring
+  static unsigned long lastHeapCheck = 0;
+  if (millis() - lastHeapCheck > 5000) { // Every 5 seconds
+    Serial.printf("Free heap: %d bytes\n", ESP.getFreeHeap());
+    lastHeapCheck = millis();
+  }
+  delay(100);
 }
