@@ -8,8 +8,9 @@ This project is a prototype for building an operating system-like interface on a
 ## ⚠️ Notes
 
 - **Power Management**  
-  To avoid flickering of the TFT display when audio is active:
-  - Use **separate VINs** for the TFT Display and MAX98357A.
+ ~~ To avoid flickering of the TFT display when audio is active:~~
+  ~~- Use **separate VINs** for the TFT Display and MAX98357A.~~
+  The flickering in tft display during audio output was due to me powering the board with through a type-C connection. Using a normal USB port is fine.
   
 - **SD Card Compatibility**  
   - SD cards of **32GB or more** often **fail to work** reliably with the `SD.h` library.
@@ -27,30 +28,41 @@ This project is a prototype for building an operating system-like interface on a
 
 ## 📟 Pinout Summary
 
-### 🔹 TFT Display & SD Card (SPI Interface)
+### 🔹 TFT Display (VSPI - Default SPI)
 
-| Component       | ESP32 Pin | Description              |
-|----------------|-----------|--------------------------|
-| TFT/SD Power    | 5V        | VIN for TFT/SD Module (if regulated) |
-| MISO           | GPIO 19   | SPI Master In Slave Out  |
-| MOSI           | GPIO 23   | SPI Master Out Slave In  |
-| SCLK           | GPIO 18   | SPI Clock                |
-| DC (TFT)       | GPIO 2    | TFT Data/Command Select  |
-| CS (TFT)       | GPIO 15   | TFT Chip Select          |
-| CS (SD Card)   | GPIO 2    | SD Card Chip Select      |
+| Signal    | ESP32 Pin | Description                |
+|-----------|-----------|----------------------------|
+| MISO      | GPIO 19   | SPI Master In Slave Out    |
+| MOSI      | GPIO 23   | SPI Master Out Slave In    |
+| SCLK      | GPIO 18   | SPI Clock                  |
+| TFT_CS    | GPIO 15   | TFT Chip Select            |
+| TFT_DC    | GPIO 2    | TFT Data/Command Select    |
+| TFT_RST   | GPIO 4    | TFT Reset                  |
+| Power     | 3.3V      | VIN for TFT                |
 
-> **Note**: Ensure **TFT and SD card do not share the same Chip Select (CS) pin** if used simultaneously. GPIO 2 is reused above — update if needed.
+### 🔹 SD Card (HSPI - Custom SPI)
+
+| Signal    | ESP32 Pin | Description                |
+|-----------|-----------|----------------------------|
+| MISO      | GPIO 12   | HSPI Master In Slave Out   |
+| MOSI      | GPIO 4    | HSPI Master Out Slave In   |
+| SCLK      | GPIO 14   | HSPI Clock                 |
+| SD_CS     | GPIO 5    | SD Card Chip Select        |
+| Power     | 3.3V      | VIN for SD Card            |
+
+> **Note:**
+> - SD card and TFT are now on separate SPI buses (HSPI for SD, VSPI for TFT). This avoids bus contention and allows concurrent use.
 
 ---
 
-### 🔊 Audio Output (MAX98357A DAC)
+### 🔊 Audio Output (MAX98357A DAC, I2S)
 
-| Component      | ESP32 Pin | Description         |
-|----------------|-----------|---------------------|
-| Power          | 3.3V      | VIN for MAX98357A   |
-| LRC            | GPIO 14   | Left/Right Clock    |
-| BCLK           | GPIO 27   | Bit Clock           |
-| DIN            | GPIO 26   | Digital Audio Input |
+| Signal      | ESP32 Pin | Description             |
+|-------------|-----------|-------------------------|
+| Power       | 3.3V      | VIN for MAX98357A       |
+| BCLK        | GPIO 27   | I2S Bit Clock           |
+| LRC (WS)    | GPIO 25   | I2S Left/Right Clock    |
+| DIN         | GPIO 26   | I2S Digital Audio Input |
 
 ---
 
