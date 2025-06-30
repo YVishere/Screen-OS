@@ -31,8 +31,8 @@ int bufferHeight;
 int xDisp;
 int yDisp;
 
-uint8_t *buffer1;
-uint8_t *buffer2;
+uint16_t *buffer1;
+uint16_t *buffer2;
 
 SemaphoreHandle_t spiMutexBuffer;
 SemaphoreHandle_t spiMutexDisp;
@@ -110,7 +110,7 @@ void loadBuffer1(void *pvParameters) {
                     continue;
                 }
                 
-                int bytesRead = vidFile.read(buffer1, bufferWidth * bufferHeight);
+                int bytesRead = vidFile.read((uint8_t *)buffer1, bufferWidth * bufferHeight * 2);
                 vidFile.close();
                 
                 Serial.printf("Loading buffer 1 for file %s\n", currentFileName);
@@ -166,8 +166,7 @@ void loadBuffer2(void *pvParameters) {
                     continue;
                 }
                 
-                int bytesRead = vidFile.read(buffer2, bufferWidth * bufferHeight);
-                vidFile.close();
+                int bytesRead = vidFile.read((uint8_t*)buffer2, bufferWidth * bufferHeight *2);
                 
                 Serial.printf("Loading buffer 2 for file %s\n", currentFileName);
 
@@ -245,11 +244,14 @@ void drawBuffer2(void *pvParameters) {
         // Feed watchdog at the beginning of each loop
         feedWatchdog();
         vTaskDelay(pdMS_TO_TICKS(1));
-        
+        uint16_t *dmaBufptr = (uint16_t*)heap_caps_malloc(bufferHeight*bufferWidth*sizeof(uint16_t), MALLOC_CAP_DMA);
         if (active){
             // Use timeout for semaphore to prevent deadlock
             if (xSemaphoreTake(spiMutexDisp, pdMS_TO_TICKS(1000)) == pdTRUE) {
-                tft.pushImage(xDisp, yDisp, bufferWidth, bufferHeight, buffer2);
+                tft.startWrite();
+                if (tft.dmaBusy()) tft.dmaWait();
+                tft.pushImageDMA(xDisp, yDisp, bufferWidth, bufferHeight, buffer2);
+                tft.endWrite();
                 xSemaphoreGive(spiMutexDisp);
                 Serial.println("Drawing buffer 2 to display");
                 
@@ -301,8 +303,8 @@ void startSDVideo(const char *file_name, int x, int y, int width, int height){
         return;
     }
 
-    buffer1 = (uint8_t *)heap_caps_malloc(width*height*sizeof(uint8_t), MALLOC_CAP_DMA);
-    buffer2 = (uint8_t *)heap_caps_malloc(width*height*sizeof(uint8_t), MALLOC_CAP_DMA);
+    buffer1 = (uint16_t *)heap_caps_malloc(width*height*sizeof(uint16_t), MALLOC_CAP_DMA);
+    buffer2 = (uint16_t *)heap_caps_malloc(width*height*sizeof(uint16_t), MALLOC_CAP_DMA);
     if (!buffer1 || !buffer2) {
         Serial.println("Failed to allocate memory for video buffers");
         if (buffer1) heap_caps_free(buffer1);

@@ -26,6 +26,7 @@ void initDisplay(){
     digitalWrite(15, HIGH); 
 
     tft.begin();
+    tft.initDMA();
     tft.setRotation(1);
 
     tft.fillScreen(TFT_CYAN);
