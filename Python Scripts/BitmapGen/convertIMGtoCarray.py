@@ -9,6 +9,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import sys
 import cv2
+import struct
 
 
 ## Convert video to RGB332 format with all frames stacked vertically
@@ -456,9 +457,27 @@ def convert_frame_to_bitmap(frame, format='1bit'):
     
     return bitmap_array
 
-def process_video(video_path, display_width, display_height, output_folder=None, max_frames=None, rotate_k=0):
+def save_rgb565_bin(frame, filename):
+    """
+    Save a numpy RGB frame as a raw RGB565 binary file.
+    Args:
+        frame: numpy array (H, W, 3), dtype=uint8, RGB order
+        filename: output .bin file path
+    """
+    # Convert to RGB565
+    r = (frame[:,:,0] >> 3).astype(np.uint16)
+    g = (frame[:,:,1] >> 2).astype(np.uint16)
+    b = (frame[:,:,2] >> 3).astype(np.uint16)
+    rgb565 = (r << 11) | (g << 5) | b
+    # Write as little-endian bytes
+    with open(filename, "wb") as f:
+        for val in rgb565.flatten():
+            f.write(struct.pack('<H', val))
+
+def process_video(video_path, display_width, display_height, output_folder=None, max_frames=None, rotate_k=0, save_rgb565=True):
     """
     Process video file, resizing frames and converting to RGB332, saving each as a .bin file.
+    Also saves 16-bit RGB565 .bin files if save_rgb565 is True.
     Args:
         video_path: Path to input video
         display_width: Width of target display
@@ -466,6 +485,7 @@ def process_video(video_path, display_width, display_height, output_folder=None,
         output_folder: Folder to save .bin frames (default: 'output_frames')
         max_frames: Maximum number of frames to process
         rotate_k: Number of 90-degree rotations to apply
+        save_rgb565: Whether to save 16-bit RGB565 .bin files
     """
     import os
     import shutil
@@ -498,9 +518,14 @@ def process_video(video_path, display_width, display_height, output_folder=None,
         g = (resized_frame[:,:,1] >> 5) & 0x07
         b = (resized_frame[:,:,2] >> 6) & 0x03
         rgb332 = (r << 5) | (g << 2) | b
-        # Save to .bin file
-        bin_filename = os.path.join(output_folder, f"frame{frame_number+1}.bin")
-        rgb332.astype(np.uint8).tofile(bin_filename)
+        # Save to .bin file (8-bit)
+        if (not save_rgb565):
+            bin_filename = os.path.join(output_folder, f"frame{frame_number+1}.bin")
+            rgb332.astype(np.uint8).tofile(bin_filename)
+        # Save as 16-bit RGB565 if requested
+        if save_rgb565:
+            rgb565_filename = os.path.join(output_folder, f"frame{frame_number+1}.bin")
+            save_rgb565_bin(resized_frame, rgb565_filename)
         frame_number += 1
         if frame_number % 30 == 0:
             print(f"Processing frame {frame_number}/{num_frames}")
@@ -512,9 +537,9 @@ def process_video(video_path, display_width, display_height, output_folder=None,
         info_file.write(f"Frames: {frame_number}\n")
         info_file.write(f"Width: {display_width}\n")
         info_file.write(f"Height: {display_height}\n")
-        info_file.write("Format: RGB332 (RRRGGGBB)\n")
+        info_file.write("Format: RGB332 (RRRGGGBB) and RGB565 (if enabled)\n")
     print(f"Successfully exported {frame_number} frames to {output_folder}")
-    print(f"Frame size: {display_width*display_height} bytes")
+    print(f"Frame size: {display_width*display_height} bytes (8-bit), {display_width*display_height*2} bytes (16-bit)")
 
 if __name__ == "__main__":
     # Get image path from command line or use default
@@ -534,7 +559,7 @@ if __name__ == "__main__":
     video_path = os.path.join(script_dir, "videos", "amog.mp4")
 
     # Build video path relative to script location
-    process_video(video_path, DISPLAY_WIDTH, DISPLAY_HEIGHT, "output_frame", rotate_k=1)
+    process_video(video_path, DISPLAY_WIDTH, DISPLAY_HEIGHT, "output_frame2", rotate_k=1)
 
     # convert_video_to_rgb332_bin_frames(video_path, "output_frames", max_frames=10, rotate_k=1)
     
