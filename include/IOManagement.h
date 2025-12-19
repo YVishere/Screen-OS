@@ -17,6 +17,10 @@
 
 #define SD_DET          35
 
+#define JOY2_BUTTON     34
+#define SW_OK           36
+#define SW_BACK         39
+
 typedef enum{
     BUTTON_PRESSED,
     BUTTON_RELEASED

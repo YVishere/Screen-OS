@@ -52,6 +52,10 @@ void initIO() {
 
     pinMode(SD_DET, INPUT);
 
+    pinMode(JOY2_BUTTON, INPUT);
+    pinMode(SW_OK, INPUT);
+    pinMode(SW_BACK, INPUT);
+
     setDir();
 }
 
