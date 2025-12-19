@@ -17,6 +17,7 @@
 
 #define SD_DET          35
 
+#define JOY1_BUTTON     0
 #define JOY2_BUTTON     34
 #define SW_OK           36
 #define SW_BACK         39

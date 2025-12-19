@@ -41,6 +41,11 @@ void initIO() {
     Serial.println("\nScan complete.");
     Serial.print("Total devices found: ");
     Serial.println(count);
+    
+    pinMode(JOY1_H, INPUT);
+    pinMode(JOY1_V, INPUT);
+    pinMode(JOY2_H, INPUT);
+    pinMode(JOY2_V, INPUT);
 
     pinMode(IO_RESET_PIN, OUTPUT);
     digitalWrite(IO_RESET_PIN, LOW); // Assert reset
@@ -52,6 +57,7 @@ void initIO() {
 
     pinMode(SD_DET, INPUT);
 
+    pinMode(JOY1_BUTTON, INPUT);
     pinMode(JOY2_BUTTON, INPUT);
     pinMode(SW_OK, INPUT);
     pinMode(SW_BACK, INPUT);

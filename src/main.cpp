@@ -8,11 +8,6 @@
 void setup() {
     Serial.begin(115200);
     delay(1000);
-
-    pinMode(JOY1_H, INPUT);
-    pinMode(JOY1_V, INPUT);
-    pinMode(JOY2_H, INPUT);
-    pinMode(JOY2_V, INPUT);
     
     initIO();
 
@@ -41,6 +36,7 @@ void loop() {
         static uint8_t miscStates = 0;
         static ButtonState prevOK = BUTTON_RELEASED;
         static ButtonState prevBACK = BUTTON_RELEASED;
+        static ButtonState prevJOY1 = BUTTON_RELEASED;
         static ButtonState prevJOY2 = BUTTON_RELEASED;
 
         static int sd_detected = 0;
@@ -75,11 +71,18 @@ void loop() {
             Serial.print(buttonStates, BIN);
             Serial.println();
         }
-
+        
+        ButtonState currJOY1 = (digitalRead(JOY1_BUTTON) == LOW) ? BUTTON_PRESSED : BUTTON_RELEASED;
         ButtonState currJOY2 = (digitalRead(JOY2_BUTTON) == LOW) ? BUTTON_PRESSED : BUTTON_RELEASED;
         ButtonState currOK = (digitalRead(SW_OK) == LOW) ? BUTTON_PRESSED : BUTTON_RELEASED;
         ButtonState currBACK = (digitalRead(SW_BACK) == LOW) ? BUTTON_PRESSED : BUTTON_RELEASED;
-        
+
+        if (currJOY1 != prevJOY1) {
+            prevJOY1 = currJOY1;
+            Serial.print("JOY1 Button: ");
+            Serial.println((currJOY1 == BUTTON_PRESSED) ? "PRESSED" : "RELEASED");
+        }
+
         if (currJOY2 != prevJOY2) {
             prevJOY2 = currJOY2;
             Serial.print("JOY2 Button: ");
@@ -98,6 +101,7 @@ void loop() {
             Serial.println((currBACK == BUTTON_PRESSED) ? "PRESSED" : "RELEASED");
         }
 
+        prevJOY1 = currJOY1;
         prevJOY2 = currJOY2;
         prevOK = currOK;
         prevBACK = currBACK;
