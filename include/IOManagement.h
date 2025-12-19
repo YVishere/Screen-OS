@@ -30,6 +30,7 @@ void initIO();
 
 void setDir();
 uint8_t readButtonIoExpander();
+uint8_t readSDStatus();
 
 // ISR to read digital and analog inputs
 void IRAM_ATTR buttonIoExpanderISR();

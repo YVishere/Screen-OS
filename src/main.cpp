@@ -3,7 +3,7 @@
 #include "display.h"
 #include "SD_intf.h"
 
-#define DEBUG_LOOP 0  // Set to 1 for debugging the loop
+#include "debug.h"
 
 void setup() {
     Serial.begin(115200);
@@ -15,18 +15,24 @@ void setup() {
     pinMode(JOY2_V, INPUT);
     
     initIO();
-    initDisplay(false);
 
-    if (init_sdmmc_idf(false) != ESP_OK) {
-        printf("Retry 1-bit...\n");
-        init_sdmmc_idf(true);
+    if (readSDStatus() == 1) {
+        Serial.println("SD Card in MMC holder Detected");
+        if (init_sdmmc_idf(false) != ESP_OK) {
+            printf("Retry 1-bit...\n");
+            init_sdmmc_idf(true);
+        }
+        initDisplay(false);
+    }
+    else {
+        initDisplay(true);
     }
 }
 
 void loop() {
     #if DEBUG_LOOP == 0
         // Main loop code here
-    #else DEBUG_LOOP == 1
+    #else
         static int joh1h = 0;
         static int joh2h = 0;
         static int joy1v = 0;
@@ -64,6 +70,7 @@ void loop() {
             Serial.print(joy2v);
             Serial.print(" | Buttons: ");
             Serial.print(buttonStates, BIN);
+            Serial.println();
         }
 
         // sd_detected = digitalRead(SD_DET);

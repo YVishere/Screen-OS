@@ -115,6 +115,10 @@ uint8_t readButtonIoExpander() {
     return buttonStates;
 }
 
+uint8_t readSDStatus() {
+    return digitalRead(SD_DET);
+} 
+
 void IRAM_ATTR buttonIoExpanderISR() {
     buttonIoExpanderIntFlag = true;
 }
