@@ -1,119 +1,76 @@
 #include <Arduino.h>
-#include <SD.h>
-#include "WAVFileReader.h"
-#include "I2SOutput.h"
-#include "AVIFileReader.h"
-#include "TFT_output.h"
+#include "IOManagement.h"
 #include "display.h"
-#include "SD_video.h"
+#include "SD_intf.h"
 
-i2s_pin_config_t i2sPins = {
-    .bck_io_num = GPIO_NUM_27,
-    .ws_io_num = GPIO_NUM_25,
-    .data_out_num = GPIO_NUM_26,
-    .data_in_num = -1};
-
-I2SOutput *output;
-SampleSource *sampleSource;
-
-// Video playback components (similar to audio)
-TFT_Output *videoOutput;
-FrameSource *videoSource;
-extern TFT_eSPI tft; // Declared in display.cpp
-
-const char *FRAME_FILE_PATTERN = "/output_frame/frame%d.bin";
-
-// Function to demonstrate AVIFileReader and TFT_Output usage
-void setupVideoPlayback() {
-  // Example setup for video playback - similar to audio setup
-  if (SD.exists("/video.avi")) {
-    Serial.println("Found video.avi file, setting up video playback...");
-    
-    // Create video source (AVI file reader)
-    videoSource = new AVIFileReader("/video.avi");
-    
-    // Create video output (TFT display)
-    videoOutput = new TFT_Output();
-    
-    // Start video playback on TFT display
-    // Parameters: TFT instance, video source, x, y, width, height
-    videoOutput->start(&tft, videoSource, 0, 0, 160, 128);
-    
-    Serial.println("Video playback started");
-  } else {
-    Serial.println("No video.avi file found, skipping video playback setup");
-  }
-}
-
-// Function to demonstrate WAVFileReader and I2SOutput usage  
-void setupAudioPlayback() {
-  // Example setup for audio playback
-  if (SD.exists("/5052.wav")) {
-    Serial.println("Found audio file, setting up audio playback...");
-    
-    // Create audio source (WAV file reader)
-    sampleSource = new WAVFileReader("/5052.wav");
-    
-    // Create audio output (I2S)
-    output = new I2SOutput();
-    
-    // Start audio playback on I2S
-    output->start(I2S_NUM_1, i2sPins, sampleSource);
-    
-    Serial.println("Audio playback started");
-  } else {
-    Serial.println("No audio file found, skipping audio playback setup");
-  }
-}
+#define DEBUG_LOOP 0  // Set to 1 for debugging the loop
 
 void setup() {
-  Serial.begin(115200);
-  delay(1000); 
+    Serial.begin(115200);
+    delay(1000);
 
-  Serial.println("=== ESP32 Video Player Starting ===");
-  Serial.printf("Free heap: %d bytes\n", ESP.getFreeHeap());
-  Serial.printf("PSRAM available: %s\n", psramFound() ? "Yes" : "No");
+    pinMode(JOY1_H, INPUT);
+    pinMode(JOY1_V, INPUT);
+    pinMode(JOY2_H, INPUT);
+    pinMode(JOY2_V, INPUT);
+    
+    initIO();
+    initDisplay(false);
 
-  Serial.println("Initializing display and SD card...");
-  initDisplay();
-
-  // Add delay to ensure SD card is fully initialized
-  delay(500);
-
-  Serial.println("Starting VID");
-  startSDVideo(FRAME_FILE_PATTERN, 0, 0, 160, 128);
-
-  Serial.printf("Setup complete. Free heap: %d bytes\n", ESP.getFreeHeap());
-
-  // Uncomment one of these functions to enable playback:
-  
-  // For video playback using AVI files:
-  // setupVideoPlayback();
-  
-  // For audio playback using WAV files:
-  // setupAudioPlayback();
-
-  // Legacy examples (currently commented out)
-  // Audio playback example (currently commented out)
-  // sampleSource = new WAVFileReader("/5052.wav");
-  // Serial.println("Starting I2S Output");
-  // output = new I2SOutput();
-  // output->start(I2S_NUM_1, i2sPins, sampleSource);
-
-  // Video playback example using AVIFileReader and TFT_Output
-  // Uncomment the lines below to use AVI file playback instead of frame files
-  // videoSource = new AVIFileReader("/video.avi");
-  // Serial.println("Starting TFT Video Output");
-  // videoOutput = new TFT_Output();
-  // videoOutput->start(&tft, videoSource, 0, 0, 160, 128);
+    if (init_sdmmc_idf(false) != ESP_OK) {
+        printf("Retry 1-bit...\n");
+        init_sdmmc_idf(true);
+    }
 }
 
 void loop() {
-  // Add watchdog feeding in main loop and memory monitoring
-  static unsigned long lastHeapCheck = 0;
-  if (millis() - lastHeapCheck > 5000) { // Every 5 seconds
-    Serial.printf("Free heap: %d bytes\n", ESP.getFreeHeap());
-    lastHeapCheck = millis();
-  }
-  delay(100);
+    #if DEBUG_LOOP == 0
+        // Main loop code here
+    #else DEBUG_LOOP == 1
+        static int joh1h = 0;
+        static int joh2h = 0;
+        static int joy1v = 0;
+        static int joy2v = 0;
+        static uint8_t buttonStates = 0;
+        static uint8_t miscStates = 0;
+
+        static int sd_detected = 0;
+
+        rotateColors();
+
+
+        if (buttonIoExpanderIntFlag) {
+            buttonStates = readButtonIoExpander();
+        }
+
+        int new_joh1h = analogRead(JOY1_H);
+        int new_joy1v = analogRead(JOY1_V);
+        int new_joh2h = analogRead(JOY2_H);
+        int new_joy2v = analogRead(JOY2_V);
+        if (abs(new_joh1h - joh1h) > 100 || abs(new_joy1v - joy1v) > 100 || 
+            abs(new_joh2h - joh2h) > 100 || abs(new_joy2v - joy2v) > 100) {
+            joh1h = new_joh1h;
+            joy1v = new_joy1v;
+            joh2h = new_joh2h;
+            joy2v = new_joy2v;
+
+            Serial.print("Joy1 H: ");
+            Serial.print(joh1h);
+            Serial.print(" V: ");
+            Serial.print(joy1v);
+            Serial.print(" | Joy2 H: ");
+            Serial.print(joh2h);
+            Serial.print(" V: ");
+            Serial.print(joy2v);
+            Serial.print(" | Buttons: ");
+            Serial.print(buttonStates, BIN);
+        }
+
+        // sd_detected = digitalRead(SD_DET);
+        // if (sd_detected == HIGH) {
+        //     Serial.println("SD Detected: Yes");
+        // } else {
+        //     Serial.println("SD Detected: No");
+        // }
+    #endif
 }
