@@ -1,15 +1,21 @@
-#ifndef __DISPLAY_H
-#define __DISPLAY_H
-
-#include <Arduino.h>
-#include <TFT_eSPI.h>
+#ifndef DISPLAY_H
+#define DISPLAY_H
 
 #include <SPI.h>
-#include <SD.h>
-#include <FS.h>
 
-void initDisplay();
-void printDirectory(File dir, int numTabs);
+#include <FS.h>
+#include <SD.h>
+
+#include <TFT_eSPI.h>
+
+#define HEIGHT 320
+#define WIDTH 480
+
+
+extern const char* ANIM_FILEPATH;
+
+void initDisplay(bool SD_enable = true);
 void rotateColors();
+
 
 #endif
